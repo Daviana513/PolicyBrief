@@ -17,6 +17,13 @@ Turn policy discovery into traceable, reusable knowledge. Stop at a verified pol
 
 Complete only the requested modes. Default to read-only analysis unless the user requests a local update or the project explicitly defines local maintenance as part of the workflow. Require explicit user intent or established project authorization before any remote write.
 
+## Choose an execution profile
+
+- **Fast rigorous** is the default for bounded requests such as "find 3 new policies and sync them". Use at most two search batches, shortlist no more than twice the requested count, and deeply verify the requested count plus one backup.
+- **Exhaustive** is for explicit comprehensive audits, legal-risk reviews, or jurisdiction-wide inventories. State that this profile takes longer before starting.
+
+In fast rigorous mode, stop researching a candidate after one targeted fallback search fails to resolve a missing controlling source, validity basis, or application window. Mark it partial or lead-only and continue. Never invent an exact date to make validation pass.
+
 ## Load references selectively
 
 - Read [fact-checking.md](references/fact-checking.md) before research, validity judgments, or claim verification.
@@ -41,6 +48,8 @@ Never delete history. Link newer policies, implementation notices, interpretatio
 Use search results, media, social posts, and prior documents only to discover candidates. Use official policy text, government portals, official department pages, official application notices, or verified public-service pages as final evidence.
 
 Open every relied-on source. Do not cite search snippets. Confirm publisher identity and authority, then locate the exact paragraph, article, attachment, or service notice supporting each material claim.
+
+Batch independent searches and source opens. Prefer title, document-number, issuer-domain, and current-year queries over generic browsing. Do not walk paginated archives in fast rigorous mode unless the missing item is the only blocker for a likely promoted record.
 
 ### 4. Build claim-level evidence
 
@@ -78,6 +87,8 @@ Run structural validation before moving a lead into the verified store. Use stri
 ### 9. Write and sync safely
 
 Confirm destination identity, unique key, field mapping, and write authority. Run a dry run before the first remote sync or whenever mappings change. Preserve a local structured result if remote sync fails, and report returned counts or record identifiers accurately.
+
+When the adapter supports filtering, sync only records and claims changed in the current run. Do not rewrite the entire remote knowledge base merely to add a bounded set of records.
 
 ### 10. Produce the requested output
 

@@ -20,6 +20,7 @@ Read credentials from the environment or approved secret store. Never print, doc
 ## Upsert behavior
 
 - Match policies by `policy_id` and claims by `claim_id`.
+- Pass the changed `policy_id` values to the adapter when it supports scoped sync; claim rows should be filtered by their parent `policy_id`.
 - Create when no record exists; update only mapped changed fields when it does.
 - Preserve history and unmapped user-authored fields.
 - Keep leads and verified policies logically or physically separate.
