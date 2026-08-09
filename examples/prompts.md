@@ -7,6 +7,12 @@ Use $policy-brief to search official housing policies for Taiwan students in Fuj
 Read the existing policy and lead stores first. Separate policy validity from current application availability, add claim-level evidence, and report new, updated, expired, superseded, and lead-only records. Update local files only; do not write to a remote platform.
 ```
 
+## Search with authorized remote sync
+
+```text
+Use $policy-brief to find and verify 3 new policies, update my local policy and claim stores, and sync through the configured adapter. Run one read-only remote preflight before research. If the policy table is writable but the claim table is missing or incomplete, continue the local workflow and sync policy rows only; keep claim rows locally and report a degraded sync. Do not create remote tables, use browser workarounds, or retry permission errors.
+```
+
 ## Verify a large-number claim
 
 ```text

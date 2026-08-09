@@ -1,6 +1,6 @@
 # PolicyBrief
 
-PolicyBrief `v0.1.1-beta` is an installable Codex Skill for building policy knowledge bases that remain traceable over time. It discovers candidate policies, verifies official evidence, separates policy validity from current application availability, maintains record history, and produces verified policy packets for downstream products.
+PolicyBrief `v0.1.2-beta` is an installable Codex Skill for building policy knowledge bases that remain traceable over time. It discovers candidate policies, verifies official evidence, separates policy validity from current application availability, maintains record history, and produces verified policy packets for downstream products.
 
 Its first real-world dataset comes from Taiwan-related policies, but the core workflow can be reused for housing, education, employment, entrepreneurship, talent, and industry-support policies.
 
@@ -36,7 +36,7 @@ Skills under `~/.agents/skills` are available across projects. Codex can also in
 
 ## Remote sync requirements
 
-PolicyBrief does not include a universal Feishu, Notion, or Airtable client. Remote write requires an authorized connector or a project-specific adapter, destination IDs, field mappings, and credentials stored outside the repository. Without that setup, the Skill completes research, validation, and local output, then reports that remote sync was skipped.
+PolicyBrief does not include a universal Feishu, Notion, or Airtable client. Remote write requires an authorized connector or a project-specific adapter, destination IDs, field mappings, and credentials stored outside the repository. The Skill preflights that adapter before research. If policy records are writable but the claim table is unavailable, it completes the local workflow, syncs policy rows once, keeps claims locally, and reports a degraded remote sync instead of repeatedly trying to create schema.
 
 ## Recommended one-command prompt
 
@@ -54,17 +54,19 @@ Replace the values in brackets and send the complete prompt to Codex. This templ
 本地知识库：〔政策表路径〕和〔事实证据表路径〕
 远程目标：〔例如：已配置的飞书政策总库和政策事实证据表〕
 远程写入授权：〔允许 / 不允许〕
+远程降级策略：〔推荐：证据表不可用时，政策写入远程、证据保留本地；不要自动建表或重复重试〕
 
 请按以下流程执行：
 1. 先读取现有政策表和事实证据表，了解已有记录并查重。
-2. 搜索候选政策；搜索结果、媒体和社交内容只能作为线索，最终结论必须回到官方来源。
-3. 优先保留与目标对象直接相关、支持内容明确、仍有现实使用价值且现有知识库未充分覆盖的政策。
-4. 打开并核验政策正文、附件、官方解读、实施通知和当前申报入口。分别判断政策状态与申请状态，不把“政策有效”写成“现在可以申请”。
-5. 将适用对象、支持金额、期限、限制、有效期、申请方式和计算结果拆成独立事实证据；每项重要结论保存官方原文、原文位置、链接、核查日期和必要备注。
-6. 将候选项分类为新增、更新、无变化、失效、被替代或仅作线索。不得删除历史记录，不得覆盖未映射的用户字段。
-7. 先运行严格校验。只有通过校验的正式政策和事实证据才能写入已核验知识库。
-8. 更新本地知识库。若“远程写入授权”为“允许”，先预演同步，再写入指定平台；同步失败时保留本地结果并如实报告，不得声称上传成功。
-9. 最后报告：搜索数量、新增、更新、跳过、仅作线索、校验失败、远程新增/更新/失败数量，以及仍待确认的问题。
+2. 若允许远程写入，立即运行一次只读预检，将远程目标标为完整可用、仅政策表可用或不可用。分别检查写记录和新建表/字段权限；权限不足不是网络错误，不尝试网页绕过或重复建表。
+3. 搜索候选政策；搜索结果、媒体和社交内容只能作为线索，最终结论必须回到官方来源。
+4. 优先保留与目标对象直接相关、支持内容明确、仍有现实使用价值且现有知识库未充分覆盖的政策。
+5. 打开并核验政策正文、附件、官方解读、实施通知和当前申报入口。分别判断政策状态与申请状态，不把“政策有效”写成“现在可以申请”。
+6. 将适用对象、支持金额、期限、限制、有效期、申请方式和计算结果拆成独立事实证据；每项重要结论保存官方原文、原文位置、链接、核查日期和必要备注。
+7. 将候选项分类为新增、更新、无变化、失效、被替代或仅作线索。不得删除历史记录，不得覆盖未映射的用户字段。
+8. 先运行严格校验。只有通过校验的正式政策和事实证据才能写入已核验知识库。
+9. 更新本地知识库并执行远程同步预演。若预检结果为“仅政策表可用”，只同步本轮政策，事实证据保留本地并标记待补传；不得因此中止整轮任务。
+10. 最后报告：搜索数量、新增、更新、跳过、仅作线索、校验失败、远程新增/更新/失败数量、是否降级同步，以及仍待确认的问题。
 
 如果一次定向补查后仍找不到控制性原文、有效期依据或精确申报日期，请降级为部分核验或线索，不要继续翻查大量目录页，也不要猜测日期。
 

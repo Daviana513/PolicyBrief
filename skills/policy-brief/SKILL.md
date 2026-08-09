@@ -37,13 +37,19 @@ In fast rigorous mode, stop researching a candidate after one targeted fallback 
 
 Identify jurisdiction, audience, policy direction, time window, requested deliverable, destination, and whether the task is read-only or may write. Make conservative assumptions only when they do not change policy meaning or external state.
 
-### 2. Inspect existing records
+### 2. Preflight remote destinations early
+
+When remote sync is requested and an adapter exists, run one read-only preflight before policy research. Test record-write readiness separately from schema-write readiness and classify the destination as `full`, `policy-only`, or `unavailable`.
+
+A missing claim table or field is a schema issue, not a network failure. Do not attempt schema creation, browser workarounds, or repeated retries unless the user has explicitly authorized schema management. If the policy table is ready but the claim table is not, continue the complete local workflow and plan a policy-only remote sync; keep claim rows locally and report them as pending. If preflight itself fails once, preserve a local-first plan and move on.
+
+### 3. Inspect existing records
 
 Read policy and lead stores before searching. Preserve existing field names and add new fields non-destructively when required. Deduplicate by normalized title, issuer, and publication date; use document number, canonical URL, and policy relationships as secondary signals.
 
 Never delete history. Link newer policies, implementation notices, interpretations, and application rounds to the records they affect.
 
-### 3. Discover broadly, verify narrowly
+### 4. Discover broadly, verify narrowly
 
 Use search results, media, social posts, and prior documents only to discover candidates. Use official policy text, government portals, official department pages, official application notices, or verified public-service pages as final evidence.
 
@@ -51,13 +57,13 @@ Open every relied-on source. Do not cite search snippets. Confirm publisher iden
 
 Batch independent searches and source opens. Prefer title, document-number, issuer-domain, and current-year queries over generic browsing. Do not walk paginated archives in fast rigorous mode unless the missing item is the only blocker for a likely promoted record.
 
-### 4. Build claim-level evidence
+### 5. Build claim-level evidence
 
 Create one evidence row per claim that affects audience, benefit, amount, duration, restriction, validity, calculation, or application. Capture the claim, verdict, short verbatim quotation, source URL and type, location, check date, and caveat.
 
 Do not compress several claims into one quotation when they come from different clauses or documents.
 
-### 5. Assign four separate dimensions
+### 6. Assign four separate dimensions
 
 Do not collapse these dimensions into one label:
 
@@ -68,29 +74,31 @@ Do not collapse these dimensions into one label:
 
 An official page can describe an expired program. An effective framework can have no open application round.
 
-### 6. Record relationships and constraints
+### 7. Record relationships and constraints
 
 Extract geography, audience, benefit, amount, currency, frequency, cap, duration, exclusions, application actor, channel, timing, and contact. Preserve limiting language equivalent to "eligible", "up to", "no longer than", "subject to the annual notice", and "not duplicated with other support".
 
 Relate implementation notices, annual calls, interpretations, and replacements to their parent policy. Keep calculations separate from quoted facts and show every stacking condition.
 
-### 7. Decide record action
+### 8. Decide record action
 
 Classify each candidate as new, updated, unchanged, expired, superseded, or lead-only. Update only changed fields plus check date and update note. Keep quotations verbatim.
 
 Use the canonical schema for a new store. For an existing store, map current fields and add missing safety fields without destructive migration.
 
-### 8. Validate before promotion
+### 9. Validate before promotion
 
 Run structural validation before moving a lead into the verified store. Use strict validation for publication-ready records. A passing validator proves completeness and consistency only; it never proves that a website is official or a claim is true.
 
-### 9. Write and sync safely
+### 10. Write and sync safely
 
 Confirm destination identity, unique key, field mapping, and write authority. Run a dry run before the first remote sync or whenever mappings change. Preserve a local structured result if remote sync fails, and report returned counts or record identifiers accurately.
 
 When the adapter supports filtering, sync only records and claims changed in the current run. Do not rewrite the entire remote knowledge base merely to add a bounded set of records.
 
-### 10. Produce the requested output
+Treat policy-only fallback as a successful but degraded sync, not as a complete remote sync. Do not retry schema creation after a permission denial. Report which policy records were written, where claim rows remain, and the one action needed to enable a later claim backfill.
+
+### 11. Produce the requested output
 
 Lead with what is verified, what is effective, what is currently available, and what remains uncertain. Attach official links close to supported claims. Include a change log whenever records were inspected or modified.
 
