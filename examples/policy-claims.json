@@ -1,0 +1,41 @@
+[
+  {
+    "claim_id": "FJ-2026-007-C01",
+    "policy_id": "FJ-2026-007",
+    "claim_type": "eligibility",
+    "claim_text": "台湾地区高校优秀毕业生毕业两年内首次来漳就业，并签订3年以上劳动或聘用合同，属于就业补助适用范围。",
+    "verdict": "supported",
+    "source_quote": "台湾地区高校优秀毕业生毕业两年内来漳首次就业，与用人单位签订3年以上的劳动（聘用）合同",
+    "source_url": "https://swt.fujian.gov.cn/xxgk/jgzn/jgcs/twc/202603/t20260330_7116977.htm",
+    "source_type": "policy_text",
+    "quote_location": "第三部分第19条",
+    "checked_at": "2026-07-20",
+    "caveat": "是否达到优秀毕业生认定标准及具体申报材料，以责任单位通知为准。"
+  },
+  {
+    "claim_id": "FJ-2026-007-C02",
+    "policy_id": "FJ-2026-007",
+    "claim_type": "benefit",
+    "claim_text": "博士、硕士、本科档市级补助分别为30万元、20万元、10万元，区级再按市级补助的50%配套。",
+    "verdict": "supported",
+    "source_quote": "分别给予博士、硕士、本科毕业生30万元、20万元、10万元的补助。在市级补助基础上，再按市级补助资金的50%给予配套补助。",
+    "source_url": "https://swt.fujian.gov.cn/xxgk/jgzn/jgcs/twc/202603/t20260330_7116977.htm",
+    "source_type": "policy_text",
+    "quote_location": "第三部分第19条",
+    "checked_at": "2026-07-20",
+    "caveat": "最高45万元是博士档市级30万元与区级15万元的叠加计算，不适用于所有学历档。"
+  },
+  {
+    "claim_id": "FJ-2026-007-C03",
+    "policy_id": "FJ-2026-007",
+    "claim_type": "validity",
+    "claim_text": "该措施有效期至2027年12月31日。",
+    "verdict": "supported",
+    "source_quote": "本措施自印发之日起实施，有效期至2027年12月31日止。",
+    "source_url": "https://swt.fujian.gov.cn/xxgk/jgzn/jgcs/twc/202603/t20260330_7116977.htm",
+    "source_type": "policy_text",
+    "quote_location": "正文末尾有效期说明",
+    "checked_at": "2026-07-20",
+    "caveat": "政策有效不等于当前申报窗口开放。"
+  }
+]

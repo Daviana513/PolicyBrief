@@ -1,0 +1,36 @@
+{
+  "policy_id": "FJ-2026-007",
+  "region": "福建",
+  "city": "漳州",
+  "district": "漳州台商投资区",
+  "issuer": "漳州台商投资区管委会",
+  "issuer_level": "园区/片区",
+  "title": "漳州台商投资区支持台胞台企在区扎根发展若干措施",
+  "published_at": "2026-03-30",
+  "effective_period": "实施至2027-12-31",
+  "policy_status": "effective",
+  "application_status": "unknown",
+  "status_basis_url": "https://swt.fujian.gov.cn/xxgk/jgzn/jgcs/twc/202603/t20260330_7116977.htm",
+  "status_reason": "官方页面载明措施有效期至2027年12月31日；当前具体申报批次仍需查询责任单位通知。",
+  "audience": [
+    "台湾毕业生",
+    "台湾大学生",
+    "台青求职者",
+    "台青创业者"
+  ],
+  "categories": [
+    "就业创业",
+    "住房保障",
+    "租房补贴"
+  ],
+  "summary": "符合条件的台湾地区高校优秀毕业生首次来漳就业可按学历获得补助，区级按市级补助的50%配套；当前申报状态需以责任单位通知为准。",
+  "source_quote": "台湾地区高校优秀毕业生毕业两年内来漳首次就业，与用人单位签订3年以上的劳动（聘用）合同，分别给予博士、硕士、本科毕业生30万元、20万元、10万元的补助。",
+  "quote_location": "第三部分第19条",
+  "official_policy_url": "https://swt.fujian.gov.cn/xxgk/jgzn/jgcs/twc/202603/t20260330_7116977.htm",
+  "source_type": "policy_text",
+  "source_identity_note": "福建省商务厅官方网站公开页面，转载漳州台商投资区政策内容。",
+  "verification_status": "verified",
+  "application_channel": "具体申报以漳州台商投资区相关责任单位通知为准",
+  "last_checked": "2026-07-20",
+  "update_note": "示例记录；政策有效不等于当前申报窗口开放。"
+}
