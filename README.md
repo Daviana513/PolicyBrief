@@ -1,6 +1,6 @@
 # PolicyBrief
 
-PolicyBrief `v0.1.2-beta` is an installable Codex Skill for building policy knowledge bases that remain traceable over time. It discovers candidate policies, verifies official evidence, separates policy validity from current application availability, maintains record history, and produces verified policy packets for downstream products.
+PolicyBrief `v0.1.3-beta` is an installable Codex Skill for building policy knowledge bases that remain traceable over time. It discovers candidate policies, verifies official evidence, separates policy validity from current application availability, maintains record history, and produces verified policy packets for downstream products.
 
 Its first real-world dataset comes from Taiwan-related policies, but the core workflow can be reused for housing, education, employment, entrepreneurship, talent, and industry-support policies.
 
@@ -12,7 +12,7 @@ Its first real-world dataset comes from Taiwan-related policies, but the core wo
 - Store one evidence row per material claim.
 - Deduplicate records and track implementation, interpretation, and supersession relationships.
 - Audit stale links, check dates, lifecycle status, and evidence gaps.
-- Write local CSV or Markdown and sync through an existing authorized Feishu, Notion, or Airtable connector or project adapter.
+- Write local CSV or Markdown, sync with the bundled configurable Feishu adapter, or use an authorized Notion/Airtable connector.
 - Produce a verified policy packet without generating downstream scripts or content.
 
 ## Install
@@ -34,9 +34,21 @@ cp -R PolicyBrief/skills/policy-brief ~/.agents/skills/policy-brief
 
 Skills under `~/.agents/skills` are available across projects. Codex can also install skills from other repositories with `$skill-installer`. For broader public distribution, OpenAI recommends packaging reusable skills as plugins. See [Build skills](https://learn.chatgpt.com/docs/build-skills).
 
-## Remote sync requirements
+## Feishu setup
 
-PolicyBrief does not include a universal Feishu, Notion, or Airtable client. Remote write requires an authorized connector or a project-specific adapter, destination IDs, field mappings, and credentials stored outside the repository. The Skill preflights that adapter before research. If policy records are writable but the claim table is unavailable, it completes the local workflow, syncs policy rows once, keeps claims locally, and reports a degraded remote sync instead of repeatedly trying to create schema.
+PolicyBrief includes a dependency-free Feishu Bitable adapter for Node.js 18 or newer. After installing the Skill, copy its `.env.example` into the policy project as `.env`, then fill in that user's Base and self-built application values. The completed `.env` remains private and is ignored by this repository.
+
+```bash
+cp ~/.agents/skills/policy-brief/.env.example /path/to/policy-project/.env
+cd /path/to/policy-project
+node ~/.agents/skills/policy-brief/scripts/feishu_policy_sync.mjs preflight
+```
+
+Set `POLICYBRIEF_FIELD_PROFILE=canonical` for the English schema in this repository, or `zh` for the compatible Chinese field set. Paths, table names, table IDs, timeout, and timezone offset are configurable; see [platform sync](skills/policy-brief/references/platform-sync.md).
+
+Only core fields are required for sync. Optional profile fields are mapped when present and reported when absent; users do not need to create every possible field before the first run.
+
+The adapter preflights Feishu before research. If policy records are writable but the claim table is unavailable, it completes the local workflow, syncs only the changed policy rows, keeps claims locally, and reports a degraded sync. Notion, Airtable, and other remote platforms still require an authorized connector or project adapter.
 
 ## Recommended one-command prompt
 
@@ -95,7 +107,10 @@ PolicyBrief/
         ├── SKILL.md
         ├── agents/openai.yaml
         ├── references/
-        └── scripts/validate_policy_record.py
+        ├── .env.example
+        └── scripts/
+            ├── validate_policy_record.py
+            └── feishu_policy_sync.mjs
 ```
 
 ## Data model
@@ -137,6 +152,12 @@ Run the regression tests:
 
 ```bash
 python3 -m unittest discover -s tests -v
+```
+
+Run the Feishu adapter's offline self-test:
+
+```bash
+node skills/policy-brief/scripts/feishu_policy_sync.mjs self-test
 ```
 
 ## Safety boundaries

@@ -65,14 +65,14 @@ Downstream systems receive supported claims, prohibited claims, links, caveats, 
 
 - Browsing opens and inspects official sources.
 - Local tools maintain CSV, JSON, Markdown, or Obsidian stores.
-- Existing project scripts or connectors sync Feishu, Notion, or Airtable.
+- The bundled configurable adapter syncs Feishu; existing authorized connectors sync Notion or Airtable.
 - `validate_policy_record.py` checks structure and consistency.
 
 The validator cannot prove that a domain is official. Publisher identity and authority remain an explicit research step.
 
 ## Deliberate exclusions
 
-Version one does not include a universal government-site crawler, a hard-coded domain allowlist, a built-in Feishu client, or content-generation logic. These would increase deployment cost or false confidence without improving the core evidence model.
+Version one does not include a universal government-site crawler, a hard-coded domain allowlist, universal remote-platform clients, or content-generation logic. Feishu support is intentionally a small configurable Bitable adapter; broader integrations would increase deployment cost without improving the core evidence model.
 
 ## Success criteria
 

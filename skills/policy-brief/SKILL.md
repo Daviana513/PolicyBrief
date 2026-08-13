@@ -1,6 +1,6 @@
 ---
 name: policy-brief
-description: Research, verify, structure, audit, and maintain public-policy knowledge bases. Use when a user asks to search official policies, fact-check benefits or eligibility, determine policy validity or current application availability, separate leads from verified records, build claim-level evidence, deduplicate or update policy records, track implementation or supersession relationships, produce verified policy briefs, or prepare policy data for CSV, Markdown, Feishu, Notion, or Airtable. Sync remotely only when the project already provides an authorized connector or adapter.
+description: Research, verify, structure, audit, and maintain public-policy knowledge bases. Use when a user asks to search official policies, fact-check benefits or eligibility, determine policy validity or current application availability, separate leads from verified records, build claim-level evidence, deduplicate or update policy records, track implementation or supersession relationships, produce verified policy briefs, or prepare policy data for CSV, Markdown, Feishu, Notion, or Airtable. Includes a configurable Feishu Bitable sync adapter; other remote platforms require an authorized connector or project adapter.
 ---
 
 # PolicyBrief
@@ -39,7 +39,11 @@ Identify jurisdiction, audience, policy direction, time window, requested delive
 
 ### 2. Preflight remote destinations early
 
-When remote sync is requested and an adapter exists, run one read-only preflight before policy research. Test record-write readiness separately from schema-write readiness and classify the destination as `full`, `policy-only`, or `unavailable`.
+When remote sync is requested and an adapter exists, run one read-only preflight before policy research. Test record-write readiness separately from schema-write readiness and classify the destination as `full`, `policy-only`, or `unavailable`. For Feishu, use the bundled adapter and the project's private environment file:
+
+```bash
+node <skill-directory>/scripts/feishu_policy_sync.mjs preflight --env=<project-env-file>
+```
 
 A missing claim table or field is a schema issue, not a network failure. Do not attempt schema creation, browser workarounds, or repeated retries unless the user has explicitly authorized schema management. If the policy table is ready but the claim table is not, continue the complete local workflow and plan a policy-only remote sync; keep claim rows locally and report them as pending. If preflight itself fails once, preserve a local-first plan and move on.
 
@@ -97,6 +101,15 @@ Confirm destination identity, unique key, field mapping, and write authority. Ru
 When the adapter supports filtering, sync only records and claims changed in the current run. Do not rewrite the entire remote knowledge base merely to add a bounded set of records.
 
 Treat policy-only fallback as a successful but degraded sync, not as a complete remote sync. Do not retry schema creation after a permission denial. Report which policy records were written, where claim rows remain, and the one action needed to enable a later claim backfill.
+
+For Feishu, dry-run and then sync only the records changed in the current run:
+
+```bash
+node <skill-directory>/scripts/feishu_policy_sync.mjs sync --dry-run --env=<project-env-file> --policy-id=<ID,...>
+node <skill-directory>/scripts/feishu_policy_sync.mjs sync --env=<project-env-file> --policy-id=<ID,...>
+```
+
+Read [platform-sync.md](references/platform-sync.md) for configuration, schema profiles, and explicit schema preparation.
 
 ### 11. Produce the requested output
 

@@ -1,8 +1,8 @@
 # Platform sync
 
-Reuse the user's existing platform, schema, and sync path. Evidence traceability matters more than storage product choice.
+Reuse the user's existing platform and schema. Evidence traceability matters more than storage product choice.
 
-This Skill does not bundle a universal Feishu, Notion, or Airtable client. Remote sync requires an existing authorized connector or project adapter. If none exists, preserve the validated local result and report the missing integration instead of claiming sync is available.
+This Skill bundles a configurable Feishu Bitable adapter. Notion, Airtable, and other remote targets still require an authorized connector or project adapter. If none exists, preserve the validated local result and report the missing integration instead of claiming sync is available.
 
 ## Authorization boundary
 
@@ -43,9 +43,45 @@ Use one bounded retry only for a genuine timeout or transient response. Do not r
 
 ## Platform notes
 
-- **Feishu Bitable**: use separate policy and claim tables; map dates, selects, multi-selects, links, and policy relations explicitly.
+- **Feishu Bitable**: use the bundled adapter below with separate policy and claim tables.
 - **Notion**: inspect property types and relation targets before writing.
 - **Airtable**: use stable keys rather than row order.
 - **CSV/Markdown**: use UTF-8, quote multiline evidence, and preserve existing column order during migration.
 
 Collaborative database row position is not priority. Use sorted views based on status, check date, or downstream selection fields.
+
+## Bundled Feishu adapter
+
+The adapter requires Node.js 18 or newer and reads secrets from an environment file or exported variables. Copy `.env.example` from the Skill directory into the user's project as `.env`, then fill in the user's own values. Never edit or commit the bundled example with real credentials.
+
+Important configuration:
+
+- `POLICYBRIEF_PROJECT_ROOT`: base directory for relative paths; defaults to the current directory.
+- `POLICYBRIEF_KB_DIR`: directory containing `policies.csv` and `policy_claims.csv`.
+- `POLICYBRIEF_POLICY_CSV` and `POLICYBRIEF_CLAIM_CSV`: optional explicit CSV paths.
+- `POLICYBRIEF_FIELD_PROFILE`: `canonical` for the English schema or `zh` for the compatible Chinese schema.
+- `FEISHU_BITABLE_APP_TOKEN`: Base token.
+- `FEISHU_POLICY_TABLE_ID`: required policy table ID.
+- `FEISHU_CLAIM_TABLE_ID`: optional claim table ID; when omitted, the adapter searches by `FEISHU_CLAIM_TABLE_NAME` when the app may list tables, otherwise it safely falls back to policy-only sync.
+- `FEISHU_POLICY_TABLE_NAME` and `FEISHU_CLAIM_TABLE_NAME`: user-facing table names used for discovery and diagnostics.
+
+Run commands from the policy project, or pass `--env=/absolute/path/to/.env`:
+
+```bash
+node <skill-directory>/scripts/feishu_policy_sync.mjs preflight
+node <skill-directory>/scripts/feishu_policy_sync.mjs sync --dry-run --policy-id=REGION-2026-001
+node <skill-directory>/scripts/feishu_policy_sync.mjs sync --policy-id=REGION-2026-001
+```
+
+`preflight` is read-only. `sync --dry-run` compares local and remote records without writing. `sync` upserts by `policy_id` and `claim_id`, skips unchanged mapped fields, and preserves unmapped remote fields.
+
+Preflight requires only the core identity, status, audience, summary, source, and check-date fields. Optional fields are reported as unmapped and skipped safely. `prepare` offers the complete profile when the user wants the full schema.
+
+The `prepare` command may create missing fields and the claim table. Run it only after the user explicitly authorizes schema changes:
+
+```bash
+node <skill-directory>/scripts/feishu_policy_sync.mjs prepare --dry-run
+node <skill-directory>/scripts/feishu_policy_sync.mjs prepare
+```
+
+If the policy table is usable but the claim table is missing, incomplete, or denied, normal sync automatically becomes `policy-only`; claims stay in the configured local CSV. Add `--require-claims` only when the caller wants that condition to block the run.
