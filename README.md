@@ -1,6 +1,6 @@
 # PolicyBrief
 
-PolicyBrief `v0.1.4-beta` is an installable Codex Skill for building policy knowledge bases that remain traceable over time. It discovers candidate policies, verifies official evidence, separates policy validity from current application availability, maintains record history, and produces verified policy packets for downstream products.
+PolicyBrief `v0.2.0-beta` is an installable Codex Skill for building policy knowledge bases that remain traceable over time. It discovers candidate policies, verifies official evidence, separates policy validity from current application availability, maintains record history, and produces verified policy packets for downstream products.
 
 Its first real-world dataset comes from Taiwan-related policies, but the core workflow can be reused for housing, education, employment, entrepreneurship, talent, and industry-support policies.
 
@@ -12,7 +12,7 @@ Its first real-world dataset comes from Taiwan-related policies, but the core wo
 - Store one evidence row per material claim.
 - Deduplicate records and track implementation, interpretation, and supersession relationships.
 - Audit stale links, check dates, lifecycle status, and evidence gaps.
-- Write local CSV or Markdown, sync with the bundled configurable Feishu adapter, or use an authorized Notion/Airtable connector.
+- Write local CSV or Markdown and sync the linked policy and evidence stores with the bundled Notion or Feishu adapter.
 - Produce a verified policy packet without generating downstream scripts or content.
 
 ## Install
@@ -34,6 +34,32 @@ cp -R PolicyBrief/skills/policy-brief ~/.codex/skills/policy-brief
 
 Skills under `~/.codex/skills` are available across projects. Codex can also install skills from other repositories with `$skill-installer`. For broader public distribution, OpenAI recommends packaging reusable skills as plugins. See [Build skills](https://learn.chatgpt.com/docs/build-skills).
 
+## Notion setup
+
+Notion is the recommended cloud knowledge base. PolicyBrief includes a dependency-free adapter for Node.js 18 or newer and uses the current Notion data-source API.
+
+1. Create an internal Notion integration with read, insert, and update content capabilities.
+2. Create a parent page such as `惠台政策知识库` and connect the integration to it.
+3. Copy `.env.example` into the policy project and fill `NOTION_TOKEN` and `NOTION_PARENT_PAGE_ID`.
+4. Preview and create the two linked databases:
+
+```bash
+cp ~/.codex/skills/policy-brief/.env.example /path/to/policy-project/.env
+cd /path/to/policy-project
+node ~/.codex/skills/policy-brief/scripts/notion_policy_sync.mjs prepare --dry-run
+node ~/.codex/skills/policy-brief/scripts/notion_policy_sync.mjs prepare
+```
+
+Save the returned `NOTION_POLICY_DATA_SOURCE_ID` and `NOTION_CLAIM_DATA_SOURCE_ID` in `.env`, then verify and sync:
+
+```bash
+node ~/.codex/skills/policy-brief/scripts/notion_policy_sync.mjs preflight
+node ~/.codex/skills/policy-brief/scripts/notion_policy_sync.mjs sync --dry-run
+node ~/.codex/skills/policy-brief/scripts/notion_policy_sync.mjs sync
+```
+
+The adapter creates separate policy and claim databases, adds a claim-to-policy relation, upserts by stable IDs, and preserves unmapped Notion properties. Set `POLICYBRIEF_FIELD_PROFILE=canonical` for the English schema or `zh` for the Taiwan-policy Chinese schema.
+
 ## Feishu setup
 
 PolicyBrief includes a dependency-free Feishu Bitable adapter for Node.js 18 or newer. After installing the Skill, copy its `.env.example` into the policy project as `.env`, then fill in that user's Base and self-built application values. The completed `.env` remains private and is ignored by this repository.
@@ -48,7 +74,7 @@ Set `POLICYBRIEF_FIELD_PROFILE=canonical` for the English schema in this reposit
 
 Only core fields are required for sync. Optional profile fields are mapped when present and reported when absent; users do not need to create every possible field before the first run.
 
-The adapter preflights Feishu before research. If the policy table is accessible but the claim table is unavailable, it completes the local workflow, syncs only the changed policy rows, keeps claims locally, and reports a degraded sync. Preflight checks access and schema; the sync result confirms record-write permission. Notion, Airtable, and other remote platforms still require an authorized connector or project adapter.
+The Feishu adapter remains available for existing projects. If the policy table is accessible but the claim table is unavailable, it completes the local workflow, syncs only the changed policy rows, keeps claims locally, and reports a degraded sync. Preflight checks access and schema; the sync result confirms record-write permission.
 
 ## Recommended one-command prompt
 
@@ -64,9 +90,9 @@ Replace the values in brackets and send the complete prompt to Codex. This templ
 时间范围：〔例如：最近一年发布，或目前仍然有效〕
 目标数量：〔例如：筛选 3 项〕
 本地知识库：〔政策表路径〕和〔事实证据表路径〕
-远程目标：〔例如：已配置的飞书政策总库和政策事实证据表〕
+远程目标：〔推荐：已配置的 Notion 政策总库和政策事实证据库〕
 远程写入授权：〔允许 / 不允许〕
-远程降级策略：〔推荐：证据表不可用时，政策写入远程、证据保留本地；不要自动建表或重复重试〕
+远程降级策略：〔远程不可用时保留已验证本地结果；不要自动建库或重复重试〕
 
 请按以下流程执行：
 1. 先读取现有政策表和事实证据表，了解已有记录并查重。
@@ -85,7 +111,7 @@ Replace the values in brackets and send the complete prompt to Codex. This templ
 只完成政策知识库工作，不生成视频选题、故事、脚本、分镜或生图 Prompt。
 ```
 
-For the current Taiwan-policy project, the bracketed values can point to `惠台政策知识库/policies.csv`, `惠台政策知识库/policy_claims.csv`, and the configured Feishu tables. More focused requests are available in [examples/prompts.md](examples/prompts.md).
+For the current Taiwan-policy project, the bracketed values can point to `惠台政策知识库/policies.csv`, `惠台政策知识库/policy_claims.csv`, and the configured Notion data sources. More focused requests are available in [examples/prompts.md](examples/prompts.md).
 
 ## Repository structure
 
@@ -110,6 +136,7 @@ PolicyBrief/
         ├── .env.example
         └── scripts/
             ├── validate_policy_record.py
+            ├── notion_policy_sync.mjs
             └── feishu_policy_sync.mjs
 ```
 
@@ -158,6 +185,12 @@ Run the Feishu adapter's offline self-test:
 
 ```bash
 node skills/policy-brief/scripts/feishu_policy_sync.mjs self-test
+```
+
+Run the Notion adapter's offline self-test:
+
+```bash
+node skills/policy-brief/scripts/notion_policy_sync.mjs self-test
 ```
 
 ## Safety boundaries

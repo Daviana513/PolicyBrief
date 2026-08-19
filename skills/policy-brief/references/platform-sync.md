@@ -2,7 +2,7 @@
 
 Reuse the user's existing platform and schema. Evidence traceability matters more than storage product choice.
 
-This Skill bundles a configurable Feishu Bitable adapter. Notion, Airtable, and other remote targets still require an authorized connector or project adapter. If none exists, preserve the validated local result and report the missing integration instead of claiming sync is available.
+This Skill bundles configurable Notion and Feishu adapters. Notion is the recommended remote knowledge base; Feishu remains available for existing projects. Airtable and other targets still require an authorized connector or project adapter. If none exists, preserve the validated local result and report the missing integration instead of claiming sync is available.
 
 ## Authorization boundary
 
@@ -43,12 +43,40 @@ Do not retry a permission denial. When the policy table is accessible but the cl
 
 ## Platform notes
 
-- **Feishu Bitable**: use the bundled adapter below with separate policy and claim tables.
-- **Notion**: inspect property types and relation targets before writing.
+- **Notion**: use the bundled adapter with separate policy and claim data sources plus a claim-to-policy relation.
+- **Feishu Bitable**: use the bundled legacy adapter with separate policy and claim tables.
 - **Airtable**: use stable keys rather than row order.
 - **CSV/Markdown**: use UTF-8, quote multiline evidence, and preserve existing column order during migration.
 
 Collaborative database row position is not priority. Use sorted views based on status, check date, or downstream selection fields.
+
+## Bundled Notion adapter
+
+The dependency-free adapter uses Notion API `2026-03-11` and requires Node.js 18 or newer. Policy pages use the policy title as their Notion title, and claim pages use the fact statement; `policy_id` and `claim_id` remain stable upsert keys. The adapter clears mapped remote values when the local source is empty and preserves unmapped Notion properties.
+
+Create an internal Notion integration with read, insert, and update content capabilities. Create or choose a parent page, connect the integration to that page, and configure:
+
+- `NOTION_TOKEN`: private integration token;
+- `NOTION_PARENT_PAGE_ID`: parent page used only when `prepare` creates the two databases;
+- `NOTION_POLICY_DATA_SOURCE_ID`: policy data source ID returned by `prepare`;
+- `NOTION_CLAIM_DATA_SOURCE_ID`: claim data source ID returned by `prepare`.
+
+Run schema preparation only after explicit authorization:
+
+```bash
+node <skill-directory>/scripts/notion_policy_sync.mjs prepare --dry-run
+node <skill-directory>/scripts/notion_policy_sync.mjs prepare
+```
+
+Save the two returned data source IDs in the project `.env`, then run:
+
+```bash
+node <skill-directory>/scripts/notion_policy_sync.mjs preflight
+node <skill-directory>/scripts/notion_policy_sync.mjs sync --dry-run --policy-id=REGION-2026-001
+node <skill-directory>/scripts/notion_policy_sync.mjs sync --policy-id=REGION-2026-001
+```
+
+`prepare` creates or completes both schemas and adds the derived `关联政策` relation to claim records. `sync` writes policy pages first, then claim pages, so relation targets exist before evidence is written. The adapter does not manage Notion views; configure mobile-friendly list and filtered views in the Notion app.
 
 ## Bundled Feishu adapter
 
