@@ -1,6 +1,6 @@
 # PolicyBrief
 
-PolicyBrief `v0.1.3-beta` is an installable Codex Skill for building policy knowledge bases that remain traceable over time. It discovers candidate policies, verifies official evidence, separates policy validity from current application availability, maintains record history, and produces verified policy packets for downstream products.
+PolicyBrief `v0.1.4-beta` is an installable Codex Skill for building policy knowledge bases that remain traceable over time. It discovers candidate policies, verifies official evidence, separates policy validity from current application availability, maintains record history, and produces verified policy packets for downstream products.
 
 Its first real-world dataset comes from Taiwan-related policies, but the core workflow can be reused for housing, education, employment, entrepreneurship, talent, and industry-support policies.
 
@@ -28,27 +28,27 @@ Manual installation:
 
 ```bash
 git clone https://github.com/Daviana513/PolicyBrief.git
-mkdir -p ~/.agents/skills
-cp -R PolicyBrief/skills/policy-brief ~/.agents/skills/policy-brief
+mkdir -p ~/.codex/skills
+cp -R PolicyBrief/skills/policy-brief ~/.codex/skills/policy-brief
 ```
 
-Skills under `~/.agents/skills` are available across projects. Codex can also install skills from other repositories with `$skill-installer`. For broader public distribution, OpenAI recommends packaging reusable skills as plugins. See [Build skills](https://learn.chatgpt.com/docs/build-skills).
+Skills under `~/.codex/skills` are available across projects. Codex can also install skills from other repositories with `$skill-installer`. For broader public distribution, OpenAI recommends packaging reusable skills as plugins. See [Build skills](https://learn.chatgpt.com/docs/build-skills).
 
 ## Feishu setup
 
 PolicyBrief includes a dependency-free Feishu Bitable adapter for Node.js 18 or newer. After installing the Skill, copy its `.env.example` into the policy project as `.env`, then fill in that user's Base and self-built application values. The completed `.env` remains private and is ignored by this repository.
 
 ```bash
-cp ~/.agents/skills/policy-brief/.env.example /path/to/policy-project/.env
+cp ~/.codex/skills/policy-brief/.env.example /path/to/policy-project/.env
 cd /path/to/policy-project
-node ~/.agents/skills/policy-brief/scripts/feishu_policy_sync.mjs preflight
+node ~/.codex/skills/policy-brief/scripts/feishu_policy_sync.mjs preflight
 ```
 
 Set `POLICYBRIEF_FIELD_PROFILE=canonical` for the English schema in this repository, or `zh` for the compatible Chinese field set. Paths, table names, table IDs, timeout, and timezone offset are configurable; see [platform sync](skills/policy-brief/references/platform-sync.md).
 
 Only core fields are required for sync. Optional profile fields are mapped when present and reported when absent; users do not need to create every possible field before the first run.
 
-The adapter preflights Feishu before research. If policy records are writable but the claim table is unavailable, it completes the local workflow, syncs only the changed policy rows, keeps claims locally, and reports a degraded sync. Notion, Airtable, and other remote platforms still require an authorized connector or project adapter.
+The adapter preflights Feishu before research. If the policy table is accessible but the claim table is unavailable, it completes the local workflow, syncs only the changed policy rows, keeps claims locally, and reports a degraded sync. Preflight checks access and schema; the sync result confirms record-write permission. Notion, Airtable, and other remote platforms still require an authorized connector or project adapter.
 
 ## Recommended one-command prompt
 
@@ -117,8 +117,8 @@ PolicyBrief/
 
 PolicyBrief uses two linked datasets:
 
-- Policy records describe identity, jurisdiction, lifecycle, application status, and relationships.
-- Claim records connect each material statement to a quotation, source, location, verdict, and check date.
+- Policy records describe identity, jurisdiction, lifecycle, application status, relationships, and two optional audience filters: applicability and current actionability.
+- Claim records connect each material statement to a quotation, source, location, verdict, and check date. Applicant, recipient, materials, and responsible department stay here instead of becoming sparse policy columns.
 
 Legacy Chinese fields such as `政策状态`, `适用对象`, and `证据等级` remain readable. The canonical model adds `申请状态`, `来源类型`, `核验状态`, `政策状态依据链接`, and a separate claim table. When claim records are supplied, strict validation does not require duplicate record-level quotations.
 

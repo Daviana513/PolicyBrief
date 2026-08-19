@@ -1,4 +1,4 @@
 interface:
   display_name: "PolicyBrief"
   short_description: "核验政策事实、维护政策知识库并生成可追溯的结构化政策资料包"
-  default_prompt: "Use $policy-brief to preflight the destination, verify official policy evidence, separate policy validity from application availability, and update my policy knowledge base with a local-first fallback."
+  default_prompt: "Use $policy-brief to preflight the destination, verify official policy evidence, separate policy validity from application availability, and update my policy knowledge base from the validated local store."

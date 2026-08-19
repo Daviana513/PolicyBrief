@@ -10,7 +10,7 @@ Read the existing policy and lead stores first. Separate policy validity from cu
 ## Search with authorized remote sync
 
 ```text
-Use $policy-brief to find and verify 3 new policies, update my local policy and claim stores, and sync them with the configured Feishu adapter. Use the private project .env file and run one read-only preflight before research. After local validation, dry-run and sync only the policy IDs changed in this run. If the policy table is writable but the claim table is missing, incomplete, or denied, continue the local workflow and sync policy rows only; keep claim rows locally and report a degraded sync. Do not create remote tables, use browser workarounds, or retry permission errors.
+Use $policy-brief to find and verify 3 new policies, update my local policy and claim stores, and sync them with the configured Feishu adapter. Use the private project .env file and run one read-only preflight before research. After local validation, dry-run and sync only the policy IDs changed in this run. If the policy table is accessible but the claim table is missing, incomplete, or denied, continue the local workflow and sync policy rows only; keep claim rows locally and report a degraded sync. Do not create remote tables, use browser workarounds, or retry permission errors.
 ```
 
 ## Verify a large-number claim

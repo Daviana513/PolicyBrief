@@ -14,7 +14,7 @@ Use actions `new`, `update`, `unchanged`, `expire`, `supersede`, or `lead_only`.
 Use this order:
 
 1. **Decision**: what is verified, policy validity, and current application availability.
-2. **Who qualifies**: audience, geography, timing, identity, contract, or organizational requirements.
+2. **Who qualifies**: audience, applicability basis, geography, timing, identity, contract, or organizational requirements.
 3. **What support exists**: amount, duration, cap, stacking, and exclusions.
 4. **How it operates**: applicant, channel, current notice, materials, or contact.
 5. **Evidence**: claim-level official quotations and links.
@@ -39,6 +39,8 @@ issuer:
 policy_status:
 policy_status_reason:
 application_status:
+audience_applicability:
+actionability:
 application_window:
 audience:
 geography:

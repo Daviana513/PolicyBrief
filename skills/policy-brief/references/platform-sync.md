@@ -39,7 +39,7 @@ Record-write permission and schema-write permission are different capabilities. 
 
 Preserve local structured output when remote sync fails. Report destination, operation, created/updated/skipped/failed counts, safe error category, and local-save status.
 
-Use one bounded retry only for a genuine timeout or transient response. Do not retry a permission denial. When the policy table is writable but the claim table is unavailable, sync changed policy rows once, retain claim rows in the validated local store, and mark the remote result `degraded`. Attempt schema creation only with explicit schema-management authorization.
+Do not retry a permission denial. When the policy table is accessible but the claim table is unavailable, sync changed policy rows once, retain claim rows in the validated local store, and mark the remote result `degraded`. Attempt schema creation only with explicit schema-management authorization.
 
 ## Platform notes
 

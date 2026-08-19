@@ -54,12 +54,17 @@ Use `needs_recheck` when official evidence exists but current validity is unclea
 
 - `open`: a current notice gives an active start/end window.
 - `rolling`: an official service accepts applications continuously.
+- `periodic`: an official source provides a recurring application schedule, such as fixed days each month.
 - `upcoming`: an official source announces a future opening.
 - `closed`: the current or most recent round ended.
 - `unknown`: the framework exists but no current operational notice was found.
 - `not_applicable`: the policy has no application process.
 
 Before saying "apply now", require an application notice or current service page, channel, audience match, and check date.
+
+For Taiwan-related work, fill `惠台适用方式` only from official wording: direct inclusion, explicit reference, equal treatment, required local implementation, inferred applicability, or not applicable. Record the supporting wording as an `适用依据` claim when an ordinary eligibility claim does not already show it.
+
+Use `当前可操作性` only as a filterable summary: `有明确入口`, `需联系部门`, `等待当期通知`, `已结束`, `无需申请`, or `尚未核实`. Keep applicant, recipient, materials, and responsible department as claim rows rather than policy columns.
 
 ## 6. Policy relationships
 

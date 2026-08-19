@@ -12,6 +12,7 @@ const fieldProfiles = {
     policy: [
       ["policy_id", 1], ["地区", 3], ["城市", 1], ["区县", 1], ["发布机构", 1], ["机构层级", 3],
       ["政策标题", 1], ["文号", 1], ["发布时间", 5], ["有效期", 1], ["政策状态", 3], ["申请状态", 3],
+      ["惠台适用方式", 3], ["当前可操作性", 3],
       ["申请开始日期", 5], ["申请截止日期", 5], ["当前申请通知链接", 15], ["政策状态依据链接", 15],
       ["政策状态判断", 1], ["来源类型", 3], ["核验状态", 3], ["来源身份说明", 1], ["上位政策ID", 1],
       ["关系类型", 3], ["适用对象", 4], ["政策类别", 4], ["核心支持内容", 1], ["政策重要原文", 1],
@@ -29,7 +30,8 @@ const fieldProfiles = {
     policy: [
       ["policy_id", 1], ["region", 1], ["city", 1], ["district", 1], ["issuer", 1], ["issuer_level", 3],
       ["title", 1], ["document_number", 1], ["published_at", 5], ["effective_period", 1], ["policy_status", 3],
-      ["application_status", 3], ["application_window_start", 5], ["application_window_end", 5], ["application_notice_url", 15],
+      ["application_status", 3], ["audience_applicability", 3], ["actionability", 3], ["application_window_start", 5],
+      ["application_window_end", 5], ["application_notice_url", 15],
       ["status_basis_url", 15], ["status_reason", 1], ["audience", 4], ["categories", 4], ["summary", 1], ["source_quote", 1],
       ["quote_location", 1], ["official_policy_url", 15], ["official_interpretation_url", 15], ["source_url", 15], ["source_type", 3],
       ["source_identity_note", 1], ["verification_status", 3], ["application_channel", 1], ["last_checked", 5],
@@ -85,9 +87,7 @@ async function loadConfig() {
   if (!Number.isFinite(timeout) || timeout < 1_000) throw new SyncBlockedError("invalid_config", "POLICYBRIEF_REQUEST_TIMEOUT_MS must be at least 1000.", "Use a timeout such as 20000.");
   return {
     env,
-    envPath,
     projectRoot,
-    kbDir,
     policyCsv: env.POLICYBRIEF_POLICY_CSV ? resolveFrom(projectRoot, env.POLICYBRIEF_POLICY_CSV) : path.join(kbDir, "policies.csv"),
     claimCsv: env.POLICYBRIEF_CLAIM_CSV ? resolveFrom(projectRoot, env.POLICYBRIEF_CLAIM_CSV) : path.join(kbDir, "policy_claims.csv"),
     policyTableName: env.FEISHU_POLICY_TABLE_NAME || "政策总库",
@@ -158,15 +158,15 @@ async function requestJson(config, url, options = {}) {
       headers: { "Content-Type": "application/json; charset=utf-8", ...(options.headers ?? {}) },
     });
   } catch (error) {
-    if (error?.name === "TimeoutError") throw new SyncBlockedError("network_timeout", `Feishu request exceeded ${config.requestTimeoutMs / 1000}s.`, "Retry once; if it repeats, keep the validated local result.");
-    throw new SyncBlockedError("network_error", "Could not reach the Feishu API.", "Retry once outside a restricted network; if it repeats, keep the validated local result.");
+    if (error?.name === "TimeoutError") throw new SyncBlockedError("network_timeout", `Feishu request exceeded ${config.requestTimeoutMs / 1000}s.`, "Check connectivity before running sync again.");
+    throw new SyncBlockedError("network_error", "Could not reach the Feishu API.", "Check connectivity before running sync again.");
   }
   const text = await response.text();
   let json;
   try {
     json = text ? JSON.parse(text) : {};
   } catch {
-    throw new SyncBlockedError("invalid_response", "Feishu returned a non-JSON response.", "Retry once, then inspect the service status if it repeats.");
+    throw new SyncBlockedError("invalid_response", "Feishu returned a non-JSON response.", "Inspect the service response before running sync again.");
   }
   if (!response.ok || (json.code !== undefined && json.code !== 0)) throw new FeishuApiError(response.status, json.code, json.msg ?? "Feishu API request failed", options.method ?? "GET", url);
   return json;
@@ -283,17 +283,12 @@ async function upsertRecords(config, token, { tableId, csvPath, keyField, defini
 
 async function context(config) {
   const token = await getToken(config);
-  let tables = [];
   let claimTableId = config.claimTableId;
   if (!claimTableId) {
-    try {
-      tables = await listTables(config, token);
-    } catch (error) {
-      if (!(error instanceof FeishuApiError && error.code === 1254302)) throw error;
-    }
+    const tables = await listTables(config, token);
     claimTableId = tables.find((table) => table.name === config.claimTableName)?.table_id ?? "";
   }
-  return { config, token, tables, claimTableId };
+  return { config, token, claimTableId };
 }
 
 async function inspectSchema(ctx) {
@@ -339,7 +334,7 @@ async function preflight(config) {
   const decision = chooseSyncMode({ ...schema, policiesOnly: false, requireClaims: false });
   console.log(JSON.stringify({
     ok: decision.mode !== "blocked",
-    full_sync_ready: decision.mode === "full",
+    full_schema_ready: decision.mode === "full",
     sync_mode: decision.mode,
     field_profile: config.fieldProfile,
     policy_table_id: config.policyTableId,
@@ -351,26 +346,9 @@ async function preflight(config) {
     missing_claim_fields: schema.missingClaimFields,
     optional_policy_fields_not_mapped: schema.unmappedPolicyFields.filter((name) => !schema.missingPolicyFields.includes(name)),
     optional_claim_fields_not_mapped: schema.unmappedClaimFields.filter((name) => !schema.missingClaimFields.includes(name)),
-    next_action: decision.mode === "full" ? "sync" : decision.mode === "policy-only" ? "sync with automatic policy-only fallback; keep claims local" : `repair the ${config.policyTableName} schema before syncing`,
+    next_action: decision.mode === "full" ? "sync" : decision.mode === "policy-only" ? "sync policy records; keep claims in the validated local store" : `repair the ${config.policyTableName} schema before syncing`,
   }, null, 2));
   if (decision.mode === "blocked") process.exitCode = 2;
-}
-
-async function check(config) {
-  const ctx = await context(config);
-  const schema = await inspectSchema(ctx);
-  const policyRecords = await listRecords(config, ctx.token, config.policyTableId);
-  console.log(JSON.stringify({
-    ok: schema.policyReady && schema.claimsReady,
-    field_profile: config.fieldProfile,
-    policy_table_id: config.policyTableId,
-    claim_table_id: ctx.claimTableId || null,
-    claim_table_access: schema.claimTableAccess,
-    missing_policy_fields: schema.missingPolicyFields,
-    missing_claim_fields: schema.missingClaimFields,
-    policy_record_count: policyRecords.length,
-  }, null, 2));
-  if (!schema.policyReady || !schema.claimsReady) process.exitCode = 2;
 }
 
 async function prepare(config, { dryRun }) {
@@ -400,7 +378,7 @@ async function sync(config, { dryRun, policiesOnly, requireClaims }) {
   const policyFilter = selectedPolicyIds.size ? (record) => selectedPolicyIds.has(String(record.policy_id ?? "").trim()) : () => true;
   if (decision.mode === "blocked") {
     const policyProblem = decision.reason === "policy_schema_incomplete";
-    throw new SyncBlockedError(decision.reason, policyProblem ? `Missing policy fields: ${schema.missingPolicyFields.join(", ")}` : `Missing or incomplete Feishu table: ${config.claimTableName}`, policyProblem ? "Run prepare with schema-write permission." : "Rerun without --require-claims to use policy-only fallback.");
+    throw new SyncBlockedError(decision.reason, policyProblem ? `Missing policy fields: ${schema.missingPolicyFields.join(", ")}` : `Missing or incomplete Feishu table: ${config.claimTableName}`, policyProblem ? "Run prepare with schema-write permission." : "Run sync without --require-claims to use policy-only mode.");
   }
   const policy = await upsertRecords(config, ctx.token, { tableId: config.policyTableId, csvPath: config.policyCsv, keyField: "policy_id", definitions: config.fields.policy, dryRun, recordFilter: policyFilter });
   if (decision.mode === "policy-only") {
@@ -421,7 +399,7 @@ function selfTest() {
 }
 
 function help() {
-  console.log("Usage: node feishu_policy_sync.mjs <preflight|check|prepare|sync|self-test> [--dry-run] [--policy-id=ID,...] [--policies-only] [--require-claims] [--env=PATH]");
+  console.log("Usage: node feishu_policy_sync.mjs <preflight|prepare|sync|self-test> [--dry-run] [--policy-id=ID,...] [--policies-only] [--require-claims] [--env=PATH]");
 }
 
 let activeConfig;
@@ -433,10 +411,9 @@ try {
     activeConfig = await loadConfig();
     const options = { dryRun: process.argv.includes("--dry-run"), policiesOnly: process.argv.includes("--policies-only"), requireClaims: process.argv.includes("--require-claims") };
     if (command === "preflight") await preflight(activeConfig);
-    else if (command === "check") await check(activeConfig);
     else if (command === "prepare") await prepare(activeConfig, options);
     else if (command === "sync") await sync(activeConfig, options);
-    else throw new SyncBlockedError("invalid_command", `Unknown command: ${command}`, "Use preflight, check, prepare, sync, self-test, or help.");
+    else throw new SyncBlockedError("invalid_command", `Unknown command: ${command}`, "Use preflight, prepare, sync, self-test, or help.");
   }
 } catch (error) {
   const roleDenied = error instanceof FeishuApiError && error.code === 1254302;
@@ -449,7 +426,7 @@ try {
     status: error.status,
     code: error.code,
     message: roleDenied ? `The app role cannot perform this operation on ${target}.` : error.message,
-    next_action: schemaDenied ? "Grant schema-management permission or create the fields manually." : roleDenied ? `Grant the app role access to ${target}; do not retry as a network error.` : error.nextAction ?? "Keep the validated local result and inspect the error before retrying.",
+    next_action: schemaDenied ? "Grant schema-management permission or create the fields manually." : roleDenied ? `Grant the app role access to ${target}; this is not a network error.` : error.nextAction ?? "Inspect the error before running sync again.",
   }, null, 2));
   process.exitCode = 1;
 }

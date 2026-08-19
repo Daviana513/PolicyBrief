@@ -178,6 +178,42 @@ class ValidatorTests(unittest.TestCase):
         self.assertEqual("supported", normalized["verdict"])
         self.assertEqual("application_notice", normalized["source_type"])
 
+    def test_huitai_filters_and_periodic_application_are_normalized(self):
+        policy = valid_policy()
+        policy.update(
+            {
+                "application_status": "定期开放",
+                "application_notice_url": "https://example.gov.cn/notice",
+                "application_channel": "每月1至5日线上申请",
+                "惠台适用方式": "明确参照执行",
+                "当前可操作性": "有明确入口",
+            }
+        )
+        normalized = validator.normalize_policy(policy)
+        self.assertEqual("periodic", normalized["application_status"])
+        self.assertEqual("explicit_reference", normalized["audience_applicability"])
+        self.assertEqual("explicit_channel", normalized["actionability"])
+
+    def test_application_detail_claim_types_are_normalized(self):
+        expected = {
+            "适用依据": "applicability_basis",
+            "申请主体": "applicant",
+            "资金对象": "recipient",
+            "申请材料": "materials",
+            "受理部门": "authority",
+        }
+        for value, canonical in expected.items():
+            claim = valid_claims()[0]
+            claim["claim_type"] = value
+            self.assertEqual(canonical, validator.normalize_claim(claim)["claim_type"])
+
+    def test_applicability_basis_can_replace_generic_eligibility_claim(self):
+        policy = valid_policy()
+        claims = valid_claims()
+        claims[0]["claim_type"] = "适用依据"
+        errors, _ = validator.validate_claim_collection(claims, [policy], strict=True)
+        self.assertEqual([], errors)
+
 
 if __name__ == "__main__":
     unittest.main()

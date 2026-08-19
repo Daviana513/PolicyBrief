@@ -25,6 +25,8 @@ Use this schema for new stores. For existing stores, preserve current columns an
 | `effective_period` | conditional | Official validity wording or precise period |
 | `policy_status` | yes | Policy lifecycle status |
 | `application_status` | conditional | Current application availability |
+| `audience_applicability` | no | For audience-specific stores: direct, by reference, equal treatment, implementation-dependent, inferred, or not applicable |
+| `actionability` | no | Whether there is a usable channel, a department to contact, a future notice to await, or no current action |
 | `application_window_start` | no | Current round opening date |
 | `application_window_end` | no | Current round closing date |
 | `application_notice_url` | no | Current official call or service page |
@@ -33,7 +35,7 @@ Use this schema for new stores. For existing stores, preserve current columns an
 | `audience` | yes | Eligible audience, preferably a list |
 | `categories` | yes | Policy categories, preferably a list |
 | `summary` | yes | Plain-language benefit and constraints |
-| `source_quote` / `quote_location` | conditional | Legacy fallback when no claim-evidence table is supplied; do not duplicate claim rows |
+| `source_quote` / `quote_location` | conditional | Single-record compatibility when no claim-evidence table is supplied; do not duplicate claim rows |
 | `official_policy_url` | conditional | Canonical official source for formal records |
 | `official_interpretation_url` | no | Official explanation or Q&A |
 | `source_url` | conditional | Best available discovery URL for leads |
@@ -63,6 +65,7 @@ Use this schema for new stores. For existing stores, preserve current columns an
 
 - `open`
 - `rolling`
+- `periodic`
 - `upcoming`
 - `closed`
 - `unknown`
@@ -83,6 +86,24 @@ Use this schema for new stores. For existing stores, preserve current columns an
 - `partial`
 - `unverified`
 
+`audience_applicability`:
+
+- `explicit_direct`
+- `explicit_reference`
+- `equal_treatment`
+- `implementation_required`
+- `inferred`
+- `not_applicable`
+
+`actionability`:
+
+- `explicit_channel`
+- `contact_authority`
+- `await_notice`
+- `ended`
+- `no_application`
+- `unverified`
+
 ## Claim records
 
 Store claim evidence in `policy_claims.csv`, a linked database table, or an equivalent collection.
@@ -91,7 +112,7 @@ Store claim evidence in `policy_claims.csv`, a linked database table, or an equi
 |---|---:|---|
 | `claim_id` | yes | Stable claim key |
 | `policy_id` | yes | Parent policy key |
-| `claim_type` | yes | Eligibility, benefit, duration, restriction, validity, application, calculation, other |
+| `claim_type` | yes | Eligibility, benefit, duration, restriction, validity, application, applicability basis, applicant, recipient, materials, authority, calculation, or other |
 | `claim_text` | yes | Plain-language claim |
 | `verdict` | yes | `supported`, `partial`, `unsupported`, or `outdated` |
 | `source_quote` | conditional | Short verbatim quotation |
@@ -101,9 +122,9 @@ Store claim evidence in `policy_claims.csv`, a linked database table, or an equi
 | `checked_at` | yes | Verification date |
 | `caveat` | no | Limitation or missing evidence |
 
-Chinese claim values are accepted for local stores: `资格条件`, `待遇内容`, `期限`, `限制条件`, `有效期`, `申请方式`, `计算方式`, and `其他`; verdicts may use `已支持`, `部分支持`, `不支持`, and `已过时`.
+Chinese claim values also include `适用依据`, `申请主体`, `资金对象`, `申请材料`, and `受理部门`. Use these in the claim table instead of adding sparse policy-level columns. Verdicts may use `已支持`, `部分支持`, `不支持`, and `已过时`.
 
-Verified formal records should have supported claims for eligibility and validity. Records with `open` or `rolling` applications should also have a supported application claim.
+Verified formal records should have a supported eligibility or applicability-basis claim and, when effective, a supported validity claim. Records with `open`, `rolling`, `periodic`, or `upcoming` applications should also have a supported application claim.
 
 ## Common Chinese mappings
 
@@ -114,6 +135,7 @@ Verified formal records should have supported claims for eligibility and validit
 | `title` / `document_number` | 政策标题 / 文号 |
 | `published_at` / `effective_period` | 发布时间 / 有效期 |
 | `policy_status` / `application_status` | 政策状态 / 申请状态 |
+| `audience_applicability` / `actionability` | 惠台适用方式 / 当前可操作性 |
 | `application_window_start` / `application_window_end` | 申请开始日期 / 申请截止日期 |
 | `application_notice_url` | 当前申请通知链接 |
 | `status_basis_url` / `status_reason` | 政策状态依据链接 / 政策状态判断 |

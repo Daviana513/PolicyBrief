@@ -27,6 +27,8 @@ ALIASES = {
     "有效期": "effective_period",
     "政策状态": "policy_status",
     "申请状态": "application_status",
+    "惠台适用方式": "audience_applicability",
+    "当前可操作性": "actionability",
     "申请开始日期": "application_window_start",
     "申请截止日期": "application_window_end",
     "当前申请通知链接": "application_notice_url",
@@ -81,6 +83,7 @@ POLICY_STATUS_ALIASES = {
 APPLICATION_STATUS_ALIASES = {
     "开放申请": "open",
     "持续受理": "rolling",
+    "定期开放": "periodic",
     "即将开放": "upcoming",
     "申请关闭": "closed",
     "申请状态未知": "unknown",
@@ -107,7 +110,30 @@ CLAIM_TYPE_ALIASES = {
     "有效期": "validity",
     "申请方式": "application",
     "计算方式": "calculation",
+    "适用依据": "applicability_basis",
+    "申请主体": "applicant",
+    "资金对象": "recipient",
+    "申请材料": "materials",
+    "受理部门": "authority",
     "其他": "other",
+}
+
+AUDIENCE_APPLICABILITY_ALIASES = {
+    "明确直接适用": "explicit_direct",
+    "明确参照执行": "explicit_reference",
+    "同等待遇适用": "equal_treatment",
+    "需要地方实施": "implementation_required",
+    "推断适用": "inferred",
+    "不适用": "not_applicable",
+}
+
+ACTIONABILITY_ALIASES = {
+    "有明确入口": "explicit_channel",
+    "需联系部门": "contact_authority",
+    "等待当期通知": "await_notice",
+    "已结束": "ended",
+    "无需申请": "no_application",
+    "尚未核实": "unverified",
 }
 
 VERDICT_ALIASES = {
@@ -143,6 +169,7 @@ VALID_POLICY_STATUSES = {
 VALID_APPLICATION_STATUSES = {
     "open",
     "rolling",
+    "periodic",
     "upcoming",
     "closed",
     "unknown",
@@ -168,9 +195,30 @@ VALID_CLAIM_TYPES = {
     "validity",
     "application",
     "calculation",
+    "applicability_basis",
+    "applicant",
+    "recipient",
+    "materials",
+    "authority",
     "other",
 }
 VALID_VERDICTS = {"supported", "partial", "unsupported", "outdated"}
+VALID_AUDIENCE_APPLICABILITY = {
+    "explicit_direct",
+    "explicit_reference",
+    "equal_treatment",
+    "implementation_required",
+    "inferred",
+    "not_applicable",
+}
+VALID_ACTIONABILITY = {
+    "explicit_channel",
+    "contact_authority",
+    "await_notice",
+    "ended",
+    "no_application",
+    "unverified",
+}
 
 POLICY_REQUIRED = {
     "policy_id",
@@ -249,6 +297,12 @@ def normalize_policy(record: dict) -> dict:
     )
     normalized["verification_status"] = canonical_value(
         normalized.get("verification_status", ""), VERIFICATION_STATUS_ALIASES
+    )
+    normalized["audience_applicability"] = canonical_value(
+        normalized.get("audience_applicability", ""), AUDIENCE_APPLICABILITY_ALIASES
+    )
+    normalized["actionability"] = canonical_value(
+        normalized.get("actionability", ""), ACTIONABILITY_ALIASES
     )
 
     legacy = str(normalized.get("evidence_level", "")).strip()
@@ -353,6 +407,8 @@ def validate_policy(
     application_status = record.get("application_status")
     source_type = record.get("source_type")
     verification_status = record.get("verification_status")
+    audience_applicability = record.get("audience_applicability")
+    actionability = record.get("actionability")
 
     if not missing(status) and status not in VALID_POLICY_STATUSES:
         errors.append(f"{policy_id}: unknown policy_status '{status}'")
@@ -362,6 +418,10 @@ def validate_policy(
         errors.append(f"{policy_id}: unknown source_type '{source_type}'")
     if not missing(verification_status) and verification_status not in VALID_VERIFICATION_STATUSES:
         errors.append(f"{policy_id}: unknown verification_status '{verification_status}'")
+    if not missing(audience_applicability) and audience_applicability not in VALID_AUDIENCE_APPLICABILITY:
+        errors.append(f"{policy_id}: unknown audience_applicability '{audience_applicability}'")
+    if not missing(actionability) and actionability not in VALID_ACTIONABILITY:
+        errors.append(f"{policy_id}: unknown actionability '{actionability}'")
 
     checked = check_date_field(record, "last_checked", policy_id, errors)
     published = check_date_field(record, "published_at", policy_id, errors)
@@ -451,7 +511,7 @@ def validate_policy(
     if missing(parent_policy_id) != missing(relation_type):
         errors.append(f"{policy_id}: parent_policy_id and relation_type must appear together")
 
-    if application_status in {"open", "rolling", "upcoming"}:
+    if application_status in {"open", "rolling", "periodic", "upcoming"}:
         if verification_status != "verified":
             errors.append(f"{policy_id}: active application status requires verified evidence")
         if missing(record.get("application_notice_url")):
@@ -473,6 +533,8 @@ def validate_policy(
             )
     if application_status == "rolling" and missing(record.get("application_channel")):
         errors.append(f"{policy_id}: rolling application requires application_channel")
+    if application_status == "periodic" and missing(record.get("application_channel")):
+        errors.append(f"{policy_id}: periodic application requires application_channel")
     if application_status == "upcoming" and missing(record.get("application_window_start")):
         errors.append(f"{policy_id}: upcoming application requires application_window_start")
     if application_status == "upcoming" and window_start and window_start <= date.today():
@@ -482,7 +544,7 @@ def validate_policy(
     if application_status == "closed" and missing(record.get("application_window_end")):
         message = f"{policy_id}: closed application has no application_window_end"
         (errors if strict else warnings).append(message)
-    if status == "expired" and application_status in {"open", "rolling", "upcoming"}:
+    if status == "expired" and application_status in {"open", "rolling", "periodic", "upcoming"}:
         errors.append(f"{policy_id}: expired policy cannot have an active application status")
 
     if checked and max_age_days is not None:
@@ -628,10 +690,14 @@ def validate_claim_collection(
             policy_id = str(policy.get("policy_id", "")).strip()
             if policy.get("verification_status") != "verified":
                 continue
-            required_types = {"eligibility"}
+            required_types = set()
+            if not ({"eligibility", "applicability_basis"} & supported_types.get(policy_id, set())):
+                errors.append(
+                    f"{policy_id}: missing supported claim type: eligibility or applicability_basis"
+                )
             if policy.get("policy_status") == "effective":
                 required_types.add("validity")
-            if policy.get("application_status") in {"open", "rolling", "upcoming"}:
+            if policy.get("application_status") in {"open", "rolling", "periodic", "upcoming"}:
                 required_types.add("application")
             missing_types = sorted(required_types - supported_types.get(policy_id, set()))
             if missing_types:

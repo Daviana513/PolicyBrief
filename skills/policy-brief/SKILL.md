@@ -22,7 +22,7 @@ Complete only the requested modes. Default to read-only analysis unless the user
 - **Fast rigorous** is the default for bounded requests such as "find 3 new policies and sync them". Use at most two search batches, shortlist no more than twice the requested count, and deeply verify the requested count plus one backup.
 - **Exhaustive** is for explicit comprehensive audits, legal-risk reviews, or jurisdiction-wide inventories. State that this profile takes longer before starting.
 
-In fast rigorous mode, stop researching a candidate after one targeted fallback search fails to resolve a missing controlling source, validity basis, or application window. Mark it partial or lead-only and continue. Never invent an exact date to make validation pass.
+In fast rigorous mode, stop researching a candidate after one targeted secondary search fails to resolve a missing controlling source, validity basis, or application window. Mark it partial or lead-only and continue. Never invent an exact date to make validation pass.
 
 ## Load references selectively
 
@@ -39,13 +39,13 @@ Identify jurisdiction, audience, policy direction, time window, requested delive
 
 ### 2. Preflight remote destinations early
 
-When remote sync is requested and an adapter exists, run one read-only preflight before policy research. Test record-write readiness separately from schema-write readiness and classify the destination as `full`, `policy-only`, or `unavailable`. For Feishu, use the bundled adapter and the project's private environment file:
+When remote sync is requested and an adapter exists, run one read-only preflight before policy research. Inspect table access and required fields, then classify the expected path as `full`, `policy-only`, or `unavailable`. Preflight does not prove record-write permission; the sync result does. For Feishu, use the bundled adapter and the project's private environment file:
 
 ```bash
 node <skill-directory>/scripts/feishu_policy_sync.mjs preflight --env=<project-env-file>
 ```
 
-A missing claim table or field is a schema issue, not a network failure. Do not attempt schema creation, browser workarounds, or repeated retries unless the user has explicitly authorized schema management. If the policy table is ready but the claim table is not, continue the complete local workflow and plan a policy-only remote sync; keep claim rows locally and report them as pending. If preflight itself fails once, preserve a local-first plan and move on.
+A missing claim table or field is a schema issue, not a network failure. Do not attempt schema creation, browser workarounds, or repeated retries unless the user has explicitly authorized schema management. If the policy table is ready but the claim table is not, continue the complete local workflow and use policy-only remote sync; keep claim rows locally and report them as pending. The validated local store remains authoritative even when remote preflight fails.
 
 ### 3. Inspect existing records
 
@@ -82,6 +82,8 @@ An official page can describe an expired program. An effective framework can hav
 
 Extract geography, audience, benefit, amount, currency, frequency, cap, duration, exclusions, application actor, channel, timing, and contact. Preserve limiting language equivalent to "eligible", "up to", "no longer than", "subject to the annual notice", and "not duplicated with other support".
 
+For Taiwan-related stores, keep only `惠台适用方式` and `当前可操作性` as policy-level filters. Store the supporting applicability wording, applicant, fund recipient, materials, and responsible department as claim rows. An eligibility claim may also support applicability when its official quotation directly names the Taiwan audience; do not duplicate the same quotation merely to populate another claim type.
+
 Relate implementation notices, annual calls, interpretations, and replacements to their parent policy. Keep calculations separate from quoted facts and show every stacking condition.
 
 ### 8. Decide record action
@@ -100,7 +102,7 @@ Confirm destination identity, unique key, field mapping, and write authority. Ru
 
 When the adapter supports filtering, sync only records and claims changed in the current run. Do not rewrite the entire remote knowledge base merely to add a bounded set of records.
 
-Treat policy-only fallback as a successful but degraded sync, not as a complete remote sync. Do not retry schema creation after a permission denial. Report which policy records were written, where claim rows remain, and the one action needed to enable a later claim backfill.
+Treat policy-only sync as a successful but degraded result, not as a complete remote sync. Do not retry schema creation after a permission denial. Report which policy records were written, where claim rows remain, and the one action needed to enable a later claim backfill.
 
 For Feishu, dry-run and then sync only the records changed in the current run:
 

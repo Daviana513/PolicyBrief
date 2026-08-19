@@ -10,6 +10,8 @@
   "effective_period": "实施至2027-12-31",
   "policy_status": "effective",
   "application_status": "unknown",
+  "audience_applicability": "explicit_direct",
+  "actionability": "await_notice",
   "status_basis_url": "https://swt.fujian.gov.cn/xxgk/jgzn/jgcs/twc/202603/t20260330_7116977.htm",
   "status_reason": "官方页面载明措施有效期至2027年12月31日；当前具体申报批次仍需查询责任单位通知。",
   "audience": [
