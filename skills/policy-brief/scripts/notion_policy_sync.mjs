@@ -211,17 +211,23 @@ async function retrieveDatabase(config, id) {
   return request(config, `/v1/databases/${id}`);
 }
 
-async function queryPages(config, dataSourceId) {
+async function queryPages(config, dataSourceId, filter) {
   const pages = [];
   let cursor;
   do {
     const body = { page_size: 100 };
+    if (filter) body.filter = filter;
     if (cursor) body.start_cursor = cursor;
     const json = await request(config, `/v1/data_sources/${dataSourceId}/query`, { method: "POST", body: JSON.stringify(body) });
     pages.push(...(json.results || []).filter((item) => item.object === "page"));
     cursor = json.has_more ? json.next_cursor : null;
   } while (cursor);
   return pages;
+}
+
+function richTextFilter(property, values) {
+  const clauses = [...values].map((value) => ({ property, rich_text: { equals: value } }));
+  return clauses.length === 1 ? clauses[0] : { or: clauses };
 }
 
 async function createDatabase(config, name, definitions) {
@@ -313,10 +319,10 @@ function changed(record, page, definitions, schema, extraComparable = {}) {
   return Object.entries(extraComparable).some(([name, value]) => !isDeepStrictEqual(value, propertyPlain(page.properties?.[name])));
 }
 
-async function upsert(config, { dataSourceId, csvPath, keyField, definitions, dryRun, filter = () => true, extraProperties = () => ({}), extraComparable = () => ({}) }) {
+async function upsert(config, { dataSourceId, csvPath, keyField, definitions, dryRun, filter = () => true, remoteFilter, extraProperties = () => ({}), extraComparable = () => ({}) }) {
   const schema = await retrieveDataSource(config, dataSourceId);
   const local = csvRecords(parseCsv(await fs.readFile(csvPath, "utf8"))).filter(filter);
-  const pages = await queryPages(config, dataSourceId);
+  const pages = await queryPages(config, dataSourceId, remoteFilter);
   const byKey = new Map(pages.map((page) => [propertyPlain(page.properties?.[keyField]), page]).filter(([key]) => key));
   const summary = { data_source_id: dataSourceId, total_local: local.length, created: 0, updated: 0, skipped: 0, page_ids: [], dry_run: dryRun };
   for (const record of local) {
@@ -415,7 +421,15 @@ async function prepare(config, dryRun) {
 async function sync(config, dryRun) {
   const selected = new Set(process.argv.filter((item) => item.startsWith("--policy-id=")).flatMap((item) => item.slice(12).split(",")).map((item) => item.trim()).filter(Boolean));
   const policyFilter = selected.size ? (record) => selected.has(String(record.policy_id || "").trim()) : () => true;
-  const policyResult = await upsert(config, { dataSourceId: config.policyDataSourceId, csvPath: config.policyCsv, keyField: "policy_id", definitions: config.fields.policy, dryRun, filter: policyFilter });
+  const policyResult = await upsert(config, {
+    dataSourceId: config.policyDataSourceId,
+    csvPath: config.policyCsv,
+    keyField: "policy_id",
+    definitions: config.fields.policy,
+    dryRun,
+    filter: policyFilter,
+    remoteFilter: selected.size ? richTextFilter("policy_id", selected) : null,
+  });
   const claimSchema = await retrieveDataSource(config, config.claimDataSourceId);
   const hasRelation = claimSchema.properties?.[RELATION_FIELD]?.type === "relation";
   const claimResult = await upsert(config, {
@@ -425,6 +439,7 @@ async function sync(config, dryRun) {
     definitions: config.fields.claims,
     dryRun,
     filter: selected.size ? (record) => selected.has(String(record.policy_id || "").trim()) : () => true,
+    remoteFilter: selected.size ? richTextFilter("policy_id", selected) : null,
     extraProperties: (record) => {
       if (!hasRelation) return {};
       const page = policyResult.byKey.get(String(record.policy_id || "").trim());
@@ -445,7 +460,8 @@ function selfTest() {
   assert.deepEqual(propertyValue("A；B", "multi_select"), { multi_select: [{ name: "A" }, { name: "B" }] });
   assert.equal(propertyPlain({ type: "select", select: { name: "有效" } }), "有效");
   assert.equal(richText("x".repeat(2001)).length, 2);
-  console.log(JSON.stringify({ ok: true, tests: 5 }, null, 2));
+  assert.deepEqual(richTextFilter("policy_id", new Set(["FJ-1"])), { property: "policy_id", rich_text: { equals: "FJ-1" } });
+  console.log(JSON.stringify({ ok: true, tests: 6 }, null, 2));
 }
 
 function help() {

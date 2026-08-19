@@ -1,6 +1,6 @@
 # PolicyBrief
 
-PolicyBrief `v0.2.0-beta` is an installable Codex Skill for building policy knowledge bases that remain traceable over time. It discovers candidate policies, verifies official evidence, separates policy validity from current application availability, maintains record history, and produces verified policy packets for downstream products.
+PolicyBrief `v0.2.1-beta` is an installable Codex Skill for building policy knowledge bases that remain traceable over time. It discovers candidate policies, verifies official evidence, separates policy validity from current application availability, maintains record history, and produces verified policy packets for downstream products.
 
 Its first real-world dataset comes from Taiwan-related policies, but the core workflow can be reused for housing, education, employment, entrepreneurship, talent, and industry-support policies.
 
